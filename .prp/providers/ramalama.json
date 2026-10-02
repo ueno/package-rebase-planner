@@ -1,0 +1,16 @@
+{
+  "name": "ramalama",
+  "engine": "openai",
+  "display_name": "RamaLama",
+  "description": "RamaLama provider",
+  "api_key": "ramalama",
+  "base_url": "http://0.0.0.0:8080/v1/chat/completions",
+  "models": [
+    {
+      "name": "qwen3.8-27b",
+      "context_limit": 128000
+    }
+  ],
+  "supports_streaming": true,
+  "requires_auth": true
+}
