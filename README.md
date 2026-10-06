@@ -41,7 +41,7 @@ $ prp plan report-v1.0-v1.1.csv -o plan-v1.0-v1.1.md
 
 ## How it works
 
-package-rebase-planner is built using the [Goose Development Kit
+package-rebase-planner is built using the [goose Development Kit
 (GDK)][gdk], which allows to develop an application based on the agent
 loop architecture.  The agents are provided with internally defined
 tools as described below:
