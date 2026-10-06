@@ -206,29 +206,6 @@ impl Operation<Session, ConversationEffect> for MaxTurnsOperation {
     }
 }
 
-/// The model called the terminal tool: record its result and stop.
-struct TerminalOperation;
-
-#[async_trait]
-impl Operation<Session, ConversationEffect> for TerminalOperation {
-    fn name(&self) -> &'static str {
-        "terminal"
-    }
-
-    async fn run(
-        &self,
-        session: &Session,
-        _conversation: &Conversation,
-        _emit: &Emitter,
-    ) -> Result<OperationResult<ConversationEffect>> {
-        if session.record.lock().unwrap().result.is_some() {
-            yielded()
-        } else {
-            not_applicable()
-        }
-    }
-}
-
 /// The model replied with prose and no tool calls, so it has nothing further to
 /// do. Take its words as the result rather than discarding them.
 struct EndTurnOperation;
@@ -245,10 +222,18 @@ impl Operation<Session, ConversationEffect> for EndTurnOperation {
         conversation: &Conversation,
         _emit: &Emitter,
     ) -> Result<OperationResult<ConversationEffect>> {
+        // The agent has called `finish` in the previous iteration.
+        let mut record = session.record.lock().unwrap();
+        if record.result.is_some() {
+            return yielded();
+        }
+
         if !ends_turn(conversation.messages()) {
             return not_applicable();
         }
-        let mut record = session.record.lock().unwrap();
+
+        // The agent hasn't called `finish`, but ended the
+        // conversation with a prose. Use it as a result.
         if record.result.is_none() {
             let text = conversation
                 .messages()
@@ -347,9 +332,8 @@ impl Agent {
         };
 
         let steps: Vec<Step<'_, Session, ConversationEffect>> = vec![
-            Step::Operation(Arc::new(MaxTurnsOperation)),
-            Step::Operation(Arc::new(TerminalOperation)),
             Step::Operation(Arc::new(EndTurnOperation)),
+            Step::Operation(Arc::new(MaxTurnsOperation)),
             Step::Operation(Arc::new(
                 ToolOperation::new().with_provider((self.role.tools)()),
             )),
