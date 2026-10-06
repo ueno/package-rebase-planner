@@ -85,7 +85,7 @@ pub struct Record {
 /// operation, so shared mutable state lives behind mutexes.
 pub struct Session {
     id: String,
-    conversation: Conversation,
+    pub conversation: Conversation,
     pub workspace: Arc<Mutex<Workspace>>,
     pub record: Arc<Mutex<Record>>,
     pub reporter: Arc<Reporter>,

@@ -3,7 +3,11 @@
 use crate::agent::Session;
 use anyhow::{Context, Result, anyhow, bail};
 use async_trait::async_trait;
-use goose_agent::{operation::Emitter, tool::ToolProvider};
+use goose_agent::{
+    operation::{Emitter, messages_since_kickoff},
+    tool::ToolProvider,
+};
+use goose_providers::conversation::message::MessageContent;
 use rmcp::model::{
     CallToolRequestParams, CallToolResult, ContentBlock, ErrorData, JsonObject, Tool,
 };
@@ -262,6 +266,13 @@ struct Tools {
     tools: Vec<Tool>,
 }
 
+fn commit_matches(this: &Option<JsonObject>, other: &Option<JsonObject>) -> bool {
+    match (this.as_ref(), other.as_ref()) {
+        (Some(this), Some(other)) => this.get("commit") == other.get("commit"),
+        _ => false,
+    }
+}
+
 #[async_trait]
 impl ToolProvider<Session> for Tools {
     async fn tools(&self, _session: &Session) -> Result<Vec<Tool>> {
@@ -278,6 +289,28 @@ impl ToolProvider<Session> for Tools {
         if !self.tools.iter().any(|tool| tool.name == call.name) {
             return Ok(CallToolResult::error(vec![ContentBlock::text(format!(
                 "Error: unsupported tool call: {}",
+                &call.name,
+            ))]));
+        }
+
+        let messages = messages_since_kickoff(&session.conversation).map_err(|error| {
+            ErrorData::internal_error(
+                format!("unable to retrieve messages from conversation: {error}"),
+                None,
+            )
+        })?;
+        let count = messages
+            .iter()
+            .flat_map(|message| message.content.iter())
+            .filter_map(MessageContent::as_tool_request)
+            .filter_map(|request| request.tool_call.as_ref().ok())
+            .filter(|other| {
+                call.name == other.name && commit_matches(&call.arguments, &other.arguments)
+            })
+            .count();
+        if count >= 3 {
+            return Ok(CallToolResult::error(vec![ContentBlock::text(format!(
+                "Error: {} called {count} times on the same commit",
                 &call.name,
             ))]));
         }
