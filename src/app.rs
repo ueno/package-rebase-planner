@@ -105,6 +105,10 @@ fn init(home: &Path) -> Result<()> {
                 "[assess]\n",
                 "provider = \"anthropic\"\n",
                 "name = \"claude-sonnet-4-5\"\n",
+                "\n",
+                "[plan]\n",
+                "provider = \"anthropic\"\n",
+                "name = \"claude-sonnet-4-5\"\n",
             ),
         )?;
     }
@@ -215,7 +219,7 @@ fn assess(
 }
 
 fn plan(home: &Path, root: &Path, input: &Path, output: &Path, threshold: usize) -> Result<()> {
-    let settings = crate::model::ModelSettings::load(home, crate::model::Task::Assess)?;
+    let settings = crate::model::ModelSettings::load(home, crate::model::Task::Plan)?;
     let backend = crate::model::build(&settings, home)?;
 
     let mut workspace = crate::tools::Workspace::new(root)?;

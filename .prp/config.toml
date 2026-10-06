@@ -1,11 +1,15 @@
 # prp configuration
 #
-# Each task has its own model. Assessment is short and
+# Each task has its own model. Assessment and planning are short and
 # read-only, so it is the place to spend less, or to keep local.
 #
 # provider: provider name | none
 # name: model name; omit for the provider's own default.
 
 [assess]
+provider = "ramalama"
+name = "qwen3.8-27b"
+
+[plan]
 provider = "ramalama"
 name = "qwen3.8-27b"

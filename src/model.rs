@@ -117,12 +117,14 @@ pub const DEFAULT_DECLARATIVE_MODEL: &str = "ramalama";
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Task {
     Assess,
+    Plan,
 }
 
 impl Task {
     pub fn name(self) -> &'static str {
         match self {
             Task::Assess => "assess",
+            Task::Plan => "plan",
         }
     }
 }
@@ -155,6 +157,8 @@ impl Default for ModelSettings {
 struct ConfigFile {
     #[serde(default)]
     assess: Option<ModelSettings>,
+    #[serde(default)]
+    plan: Option<ModelSettings>,
 }
 
 impl ModelSettings {
@@ -187,6 +191,7 @@ impl ModelSettings {
         })?;
         let chosen = match task {
             Task::Assess => parsed.assess,
+            Task::Plan => parsed.plan,
         };
         Ok(chosen.unwrap_or_default())
     }
@@ -293,6 +298,7 @@ pub mod tests {
     fn a_missing_table_falls_back_to_defaults() {
         let toml = "";
         assert_eq!(settings(toml, Task::Assess), ModelSettings::default());
+        assert_eq!(settings(toml, Task::Plan), ModelSettings::default());
     }
 
     #[test]
