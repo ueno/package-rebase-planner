@@ -1,7 +1,9 @@
 # package-rebase-planner
 
-package-rebase-planner is an LLM-backed tool to help planning a
-downstream package rebase. It consists of two subcommands:
+package-rebase-planner is an LLM-backed tool that helps rebase a
+downstream package to a newer upstream release.
+
+It currently provides two subcommands:
 
 - `assess`: assesses risk of the rebase. This examines each commit in
   a given commit range, classifies them according to the [Conventional
@@ -26,6 +28,11 @@ $ prp init
 $ edit ~/.config/prp/config.toml
 ```
 
+The config file defines model providers used for each task. A provider
+can be the name of a [declarative provider][declarative-providers] or
+custom provider defined in `providers/` directory. See `.prp/` for a
+sample configuration.
+
 ### Assessing
 
 ```console
@@ -42,9 +49,9 @@ $ prp plan report-v1.0-v1.1.csv -o plan-v1.0-v1.1.md
 ## How it works
 
 package-rebase-planner is built using the [goose Development Kit
-(GDK)][gdk], which enables to develop an application based on the agent
-loop architecture.  The agents are provided with internally defined
-tools as described below:
+(GDK)][gdk], which enables to develop an application based on the
+agent loop architecture.  The agent is provided with internally
+defined tools as described below:
 
 ### General tools
 
@@ -72,6 +79,6 @@ This project is heavily inspired by [lifewiki][lifewiki].
 MIT
 
 [conventional-commits]: https://www.conventionalcommits.org
+[declarative-providers]: https://github.com/aaif-goose/goose/tree/main/crates/goose-providers#declarative-providers
 [gdk]: https://goose-docs.ai/docs/gdk/
 [lifewiki]: https://github.com/jamadeo/lifewiki
-
