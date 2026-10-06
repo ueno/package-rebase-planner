@@ -15,7 +15,7 @@ downstream package rebase. It consists of two subcommands:
 
 ## Demo
 
-[![asciicast](https://asciinema.org/a/1267552.svg)](https://asciinema.org/a/1267552)
+[![asciicast](https://asciinema.org/a/1267552.png)](https://asciinema.org/a/1267552)
 
 ## Usage
 
