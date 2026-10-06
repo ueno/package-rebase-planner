@@ -42,7 +42,7 @@ $ prp plan report-v1.0-v1.1.csv -o plan-v1.0-v1.1.md
 ## How it works
 
 package-rebase-planner is built using the [goose Development Kit
-(GDK)][gdk], which allows to develop an application based on the agent
+(GDK)][gdk], which enables to develop an application based on the agent
 loop architecture.  The agents are provided with internally defined
 tools as described below:
 
@@ -51,7 +51,7 @@ tools as described below:
 - `read_file`: read the content of a file at a given commit (calls git)
 - `read_commit`: read the content of a given commit (calls git)
 - `list_commits`: list adjacent commits around a given commit (calls git)
-- `finish`: finish the assessment, report the summary in a prose
+- `finish`: finish the task, report the summary in a prose
 
 ### For assessment
 
