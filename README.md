@@ -13,6 +13,10 @@ downstream package rebase. It consists of two subcommands:
   assessment. This may suggest either adding tests or expanding the
   documentation.
 
+## Demo
+
+[![asciicast](https://asciinema.org/a/1267552.svg)](https://asciinema.org/a/1267552)
+
 ## Usage
 
 ### Initialization
