@@ -5,7 +5,6 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::{env, fs, io::Write, path::Path};
-use tracing::debug;
 
 #[derive(Parser)]
 #[command(
@@ -17,13 +16,17 @@ use tracing::debug;
 struct Cli {
     #[command(subcommand)]
     command: CommandName,
+
+    /// Print verbose output.
+    #[arg(short, long)]
+    verbose: bool,
 }
 
 #[derive(Subcommand)]
 enum CommandName {
     /// Create a new prp configuration in a repository.
     ///
-    /// Creates configuration files under `.prp/`. Safe to re-run:
+    /// Creates configuration files under `~/.config/prp/`. Safe to re-run:
     /// existing files are left alone.
     #[command(visible_alias = "i")]
     Init,
@@ -82,7 +85,7 @@ pub fn run() -> Result<()> {
             range,
             build_config,
             output,
-        } => assess(&home, &root, &range, build_config, &output),
+        } => assess(&home, &root, cli.verbose, &range, build_config, &output),
         CommandName::Plan {
             input,
             output,
@@ -91,6 +94,7 @@ pub fn run() -> Result<()> {
         } => plan(
             &home,
             &root,
+            cli.verbose,
             &input,
             &output,
             commit_type.as_slice(),
@@ -150,6 +154,7 @@ struct RowOwned {
 fn assess(
     home: &Path,
     root: &Path,
+    verbose: bool,
     range: &str,
     build_config: Option<PathBuf>,
     output: &Path,
@@ -194,8 +199,6 @@ fn assess(
             }
         };
 
-        debug!("{}", outcome.result.trim());
-
         let mut workspace = workspace.lock().unwrap();
 
         let assessment = workspace
@@ -217,13 +220,17 @@ fn assess(
         })?;
         writer.flush()?;
 
-        debug!(
-            "{} turn{}, {} in / {} out tokens",
-            outcome.turns,
-            if outcome.turns == 1 { "" } else { "s" },
-            outcome.usage.input_tokens.unwrap_or(0),
-            outcome.usage.output_tokens.unwrap_or(0)
-        );
+        if verbose {
+            eprintln!("{}", outcome.result.trim());
+
+            eprintln!(
+                "{} turn{}, {} in / {} out tokens",
+                outcome.turns,
+                if outcome.turns == 1 { "" } else { "s" },
+                outcome.usage.input_tokens.unwrap_or(0),
+                outcome.usage.output_tokens.unwrap_or(0)
+            );
+        }
     }
 
     Ok(())
@@ -232,6 +239,7 @@ fn assess(
 fn plan(
     home: &Path,
     root: &Path,
+    verbose: bool,
     input: &Path,
     output: &Path,
     commit_type: &[CommitType],
@@ -317,15 +325,17 @@ fn plan(
             }
         }
 
-        debug!("{}", outcome.result.trim());
+        if verbose {
+            eprintln!("{}", outcome.result.trim());
 
-        debug!(
-            "{} turn{}, {} in / {} out tokens",
-            outcome.turns,
-            if outcome.turns == 1 { "" } else { "s" },
-            outcome.usage.input_tokens.unwrap_or(0),
-            outcome.usage.output_tokens.unwrap_or(0)
-        );
+            eprintln!(
+                "{} turn{}, {} in / {} out tokens",
+                outcome.turns,
+                if outcome.turns == 1 { "" } else { "s" },
+                outcome.usage.input_tokens.unwrap_or(0),
+                outcome.usage.output_tokens.unwrap_or(0)
+            );
+        }
     }
 
     Ok(())
