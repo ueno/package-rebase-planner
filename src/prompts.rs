@@ -53,12 +53,12 @@ if the commit actually affects the given build configuration.
 Call `finish` when you've done with it."#;
 
 /// The opening message for assessment.
-pub fn assess_opening(revision: &str, build_config: Option<&str>) -> String {
+pub fn assess_opening(commit: &str, hints: Option<&str>) -> String {
     let mut text = format!(
-        "Commit: {revision}\n\nRead the commit's content, classify the type and grade the impact."
+        "Commit: {commit}\n\nRead the commit's content, classify the type and grade the impact."
     );
-    if let Some(build_config) = build_config {
-        text.push_str(&format!("\n\nBuild configuration:\n{build_config}"));
+    if let Some(hints) = hints {
+        text.push_str(&format!("\n\nHints:\n{hints}"));
     }
     text
 }
@@ -86,13 +86,17 @@ IMPORTANT:
 Call `finish` when you've done with it."#;
 
 /// The opening message for planning.
-pub fn plan_opening(commit: &str, message: &str, assessment: &Assessment) -> String {
-    format!(
+pub fn plan_opening(commit: &str, message: &str, assessment: &Assessment, hints: Option<&str>) -> String {
+    let mut text = format!(
         "Propose a remediation plan for the given risky commit:\n\n- {}: {}\n  type: {:?}\n  impact: {}\n  rationale: {}\n",
         commit,
         message,
         assessment.ty,
         assessment.impact,
         assessment.rationale.as_ref().map_or("", |v| v),
-    )
+    );
+    if let Some(hints) = hints {
+        text.push_str(&format!("\n\nHints:\n{hints}"));
+    }
+    text
 }

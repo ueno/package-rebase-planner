@@ -17,6 +17,10 @@ struct Cli {
     #[command(subcommand)]
     command: CommandName,
 
+    /// Hints file
+    #[arg(long)]
+    hints: Option<PathBuf>,
+
     /// Print verbose output.
     #[arg(short, long)]
     verbose: bool,
@@ -42,9 +46,6 @@ enum CommandName {
     Assess {
         /// Commit range to assess, in gitrevisions(7) format
         range: String,
-        /// Build configuration, e.g., config.log
-        #[arg(short = 'c')]
-        build_config: Option<PathBuf>,
         /// Output file name
         #[arg(short = 'o', default_value = "report.csv")]
         output: PathBuf,
@@ -65,11 +66,11 @@ enum CommandName {
         #[arg(short = 'o', default_value = "report.md")]
         output: PathBuf,
         /// Commit type
-        #[arg(short = 'c', value_enum)]
+        #[arg(short = 't', value_enum)]
         commit_type: Vec<CommitType>,
         /// Impact threashold
-        #[arg(short = 't', default_value_t = 3)]
-        threshold: usize,
+        #[arg(short = 'i', default_value_t = 3)]
+        impact: usize,
     },
 }
 
@@ -83,22 +84,22 @@ pub fn run() -> Result<()> {
         CommandName::Init => init(&home),
         CommandName::Assess {
             range,
-            build_config,
             output,
-        } => assess(&home, &root, cli.verbose, &range, build_config, &output),
+        } => assess(&home, &root, cli.hints, cli.verbose, &range, &output),
         CommandName::Plan {
             input,
             output,
             commit_type,
-            threshold,
+            impact,
         } => plan(
             &home,
             &root,
+            cli.hints,
             cli.verbose,
             &input,
             &output,
             commit_type.as_slice(),
-            threshold,
+            impact,
         ),
     }
 }
@@ -154,9 +155,9 @@ struct RowOwned {
 fn assess(
     home: &Path,
     root: &Path,
+    hints: Option<PathBuf>,
     verbose: bool,
     range: &str,
-    build_config: Option<PathBuf>,
     output: &Path,
 ) -> Result<()> {
     let settings = crate::model::ModelSettings::load(home, crate::model::Task::Assess)?;
@@ -166,8 +167,8 @@ fn assess(
     let workspace = crate::tools::Workspace::new(root)?;
     let workspace = Arc::new(Mutex::new(workspace));
 
-    let build_config = if let Some(build_config) = build_config {
-        Some(fs::read_to_string(&build_config)?)
+    let hints = if let Some(hints) = hints {
+        Some(fs::read_to_string(&hints)?)
     } else {
         None
     };
@@ -186,7 +187,7 @@ fn assess(
         agent
             .reporter
             .started("analyzing", count + 1, commits.len(), commit, message);
-        let opening = crate::prompts::assess_opening(commit, build_config.as_deref());
+        let opening = crate::prompts::assess_opening(commit, hints.as_deref());
         let outcome = match agent.run(
             &format!("prp-session-{commit}"),
             workspace.clone(),
@@ -239,11 +240,12 @@ fn assess(
 fn plan(
     home: &Path,
     root: &Path,
+    hints: Option<PathBuf>,
     verbose: bool,
     input: &Path,
     output: &Path,
     commit_type: &[CommitType],
-    threshold: usize,
+    impact: usize,
 ) -> Result<()> {
     let settings = crate::model::ModelSettings::load(home, crate::model::Task::Plan)?;
     let backend = crate::model::build(&settings, home)?;
@@ -271,7 +273,7 @@ fn plan(
         };
 
         if (commit_type.is_empty() || commit_type.contains(&assessment.ty))
-            && assessment.impact >= threshold
+            && assessment.impact >= impact
         {
             assessments.push((
                 record.commit.clone(),
@@ -286,8 +288,14 @@ fn plan(
     assessments.sort_by_key(|(_, _, assessment)| assessment.impact);
     let workspace = Arc::new(Mutex::new(workspace));
 
+    let hints = if let Some(hints) = hints {
+        Some(fs::read_to_string(&hints)?)
+    } else {
+        None
+    };
+
     for (commit, message, assessment) in assessments.iter().rev() {
-        let opening = crate::prompts::plan_opening(&commit, &message, &assessment);
+        let opening = crate::prompts::plan_opening(&commit, &message, &assessment, hints.as_deref());
         let outcome = match agent.run(
             &format!("prp-plan-{}", &commit),
             workspace.clone(),
