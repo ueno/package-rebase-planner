@@ -173,8 +173,7 @@ pub struct ReadRecommendationsOutput {
 
 fn parse_args<T: serde::de::DeserializeOwned>(arguments: &Option<JsonObject>) -> Result<T> {
     let value = arguments
-        .as_ref()
-        .map(Clone::clone)
+        .clone()
         .map(Value::Object)
         .ok_or_else(|| anyhow!("Missing arguments"))?;
     Ok(serde_json::from_value(value)?)
@@ -289,7 +288,7 @@ impl ToolProvider<Session> for Tools {
         if !self.tools.iter().any(|tool| tool.name == call.name) {
             return Ok(CallToolResult::error(vec![ContentBlock::text(format!(
                 "Error: unsupported tool call: {}",
-                &call.name,
+                call.name,
             ))]));
         }
 
@@ -311,13 +310,13 @@ impl ToolProvider<Session> for Tools {
         if count >= 3 {
             return Ok(CallToolResult::error(vec![ContentBlock::text(format!(
                 "Error: {} called {count} times on the same commit",
-                &call.name,
+                call.name,
             ))]));
         }
 
         session.reporter.tool_call(&call);
 
-        let result = dispatch(&session, &call).unwrap_or_else(|error| {
+        let result = dispatch(session, &call).unwrap_or_else(|error| {
             let text = format!("Error: {error:#}");
             CallToolResult::error(vec![ContentBlock::text(text)])
         });
@@ -454,7 +453,7 @@ fn dispatch(session: &Session, call: &CallToolRequestParams) -> Result<CallToolR
             workspace.write_assessment(&params.commit, params.ty, params.impact);
             let text = format!(
                 "Assessed {} as {:?}:{}.",
-                &params.commit, params.ty, params.impact
+                params.commit, params.ty, params.impact
             );
             Ok(CallToolResult::success(vec![ContentBlock::text(text)]))
         }
@@ -476,7 +475,7 @@ fn dispatch(session: &Session, call: &CallToolRequestParams) -> Result<CallToolR
                 .collect();
             let text = format!(
                 "Recommended for {}:\n{}",
-                &params.commit,
+                params.commit,
                 recommendations.join("\n"),
             );
             Ok(CallToolResult::success(vec![ContentBlock::text(text)]))

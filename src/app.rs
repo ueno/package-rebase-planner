@@ -237,6 +237,7 @@ fn assess(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 fn plan(
     home: &Path,
     root: &Path,
@@ -295,9 +296,9 @@ fn plan(
     };
 
     for (commit, message, assessment) in assessments.iter().rev() {
-        let opening = crate::prompts::plan_opening(&commit, &message, &assessment, hints.as_deref());
+        let opening = crate::prompts::plan_opening(commit, message, assessment, hints.as_deref());
         let outcome = match agent.run(
-            &format!("prp-plan-{}", &commit),
+            &format!("prp-plan-{commit}"),
             workspace.clone(),
             &opening,
         ) {
@@ -310,9 +311,8 @@ fn plan(
 
         writeln!(
             &mut output,
-            "## Commit {}: {}\n",
+            "## Commit {}: {message}\n",
             commit.chars().take(9).collect::<String>(),
-            &message
         )?;
         writeln!(&mut output, "{}\n", outcome.result.trim())?;
         writeln!(&mut output, "### Recommended actions:\n")?;

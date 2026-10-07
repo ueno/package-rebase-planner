@@ -87,14 +87,13 @@ impl Reporter {
         }
         let arguments = call
             .arguments
-            .as_ref()
-            .map(Clone::clone)
+            .clone()
             .map(Value::Object)
             .unwrap_or(Value::Null);
         self.line(&format!(
             "  {} {}{}",
             self.paint("1;34", "→"),
-            self.paint("1", &call.name.to_string()),
+            self.paint("1", call.name.as_ref()),
             self.paint(
                 "36",
                 &format!(
