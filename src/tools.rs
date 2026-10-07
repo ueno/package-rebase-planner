@@ -102,7 +102,7 @@ pub struct ListCommitsOutput {
     pub commits: Vec<(String, String)>,
 }
 
-#[derive(Debug, Clone, Copy, Deserialize, Serialize, JsonSchema)]
+#[derive(clap::ValueEnum, Debug, Clone, Copy, PartialEq, Deserialize, Serialize, JsonSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum CommitType {
     /// The commit adds a new feature.

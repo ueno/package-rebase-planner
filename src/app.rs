@@ -61,6 +61,9 @@ enum CommandName {
         /// Output file name
         #[arg(short = 'o', default_value = "report.md")]
         output: PathBuf,
+        /// Commit type
+        #[arg(short = 'c', value_enum)]
+        commit_type: Vec<CommitType>,
         /// Impact threashold
         #[arg(short = 't', default_value_t = 3)]
         threshold: usize,
@@ -83,8 +86,16 @@ pub fn run() -> Result<()> {
         CommandName::Plan {
             input,
             output,
+            commit_type,
             threshold,
-        } => plan(&home, &root, &input, &output, threshold),
+        } => plan(
+            &home,
+            &root,
+            &input,
+            &output,
+            commit_type.as_slice(),
+            threshold,
+        ),
     }
 }
 
@@ -218,7 +229,14 @@ fn assess(
     Ok(())
 }
 
-fn plan(home: &Path, root: &Path, input: &Path, output: &Path, threshold: usize) -> Result<()> {
+fn plan(
+    home: &Path,
+    root: &Path,
+    input: &Path,
+    output: &Path,
+    commit_type: &[CommitType],
+    threshold: usize,
+) -> Result<()> {
     let settings = crate::model::ModelSettings::load(home, crate::model::Task::Plan)?;
     let backend = crate::model::build(&settings, home)?;
 
@@ -244,7 +262,9 @@ fn plan(home: &Path, root: &Path, input: &Path, output: &Path, threshold: usize)
             rationale: Some(record.rationale.to_string()),
         };
 
-        if assessment.impact >= threshold {
+        if (commit_type.is_empty() || commit_type.contains(&assessment.ty))
+            && assessment.impact >= threshold
+        {
             assessments.push((
                 record.commit.clone(),
                 record.message.clone(),
