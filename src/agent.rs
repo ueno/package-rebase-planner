@@ -344,7 +344,7 @@ impl Agent {
 
         let cancel = CancellationToken::new();
         let machine = StateMachine::new(steps, cancel.clone());
-        let (tx, mut rx) = mpsc::channel(64);
+        let (tx, mut rx) = mpsc::unbounded_channel();
         let emitter = Emitter::new(tx, cancel);
 
         // The machine is async; the CLI is not.
